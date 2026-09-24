@@ -358,10 +358,10 @@ Outputs `car_<CustomerID>.tga` and `car_spec_<CustomerID>.tga` for direct use in
             )
 
             backend_dropdown = gr.Dropdown(
-                choices=["auto", "xai", "openai", "stability"],
+                choices=["auto", "pollinations", "xai", "openai", "stability"],
                 value="auto",
                 label="AI Backend",
-                info="Auto: XAI → OpenAI → Stability → Demo.",
+                info="Auto: XAI → OpenAI → Stability → Pollinations (free) → Demo.",
             )
 
             generate_spec_cb = gr.Checkbox(
@@ -386,12 +386,13 @@ Outputs `car_<CustomerID>.tga` and `car_spec_<CustomerID>.tga` for direct use in
             gr.Markdown(
                 f"""
 ---
-**API Keys** (set as environment variables):
-- `XAI_API_KEY` — Grok Imagine (recommended)
+**AI Backends** (set keys as environment variables in `.env`):
+- `XAI_API_KEY` — Grok Imagine + vision (highest quality)
 - `OPENAI_API_KEY` — DALL-E 3 + vision
 - `STABILITY_API_KEY` — Stable Diffusion 3
+- **Pollinations** — free, no key needed (Flux model)
 
-Without API keys, **Demo Mode** generates a procedural livery.
+With no API keys, **Auto** uses Pollinations (free), then Demo Mode.
                 """
             )
 

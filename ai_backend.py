@@ -5,7 +5,8 @@ Supports (in priority order):
   1. xAI Grok Imagine  — set XAI_API_KEY
   2. OpenAI DALL-E 3   — set OPENAI_API_KEY
   3. Stability AI      — set STABILITY_API_KEY
-  4. Local procedural fallback (no API key required)
+  4. Pollinations Flux — free, no API key required
+  5. Local procedural fallback (no API key required)
 """
 
 from __future__ import annotations
@@ -567,6 +568,56 @@ def _generate_stability(prompt: str, creativity: float = 0.7) -> Image.Image:
     return Image.open(io.BytesIO(resp.content)).convert("RGBA")
 
 
+def _build_flat_livery_prompt(
+    user_prompt: str,
+    car: IRacingCar,
+    reference_analysis: str = "",
+    constraints: Optional[PromptConstraints] = None,
+) -> str:
+    """Concise design-only prompt for text-to-image backends (no UV instructions).
+
+    Text-to-image models cannot see the UV template, so the verbose UV-layout
+    rules are dropped here. Keeps the prompt short enough for a GET URL and
+    focused on the visual design (colors, theme, graphics, text policy).
+    """
+    if constraints is None:
+        constraints = parse_prompt_constraints(user_prompt)
+
+    parts = [
+        f"A flat race car livery texture sheet for a {car.display_name}, "
+        "painted on a plain dark background, top-down flat layout — "
+        "NOT a 3D car render and NOT a side-view photo.",
+        f"Livery design: {user_prompt}.",
+    ]
+    if constraints.no_text:
+        parts.append(
+            "Strictly NO text, NO letters, NO numbers, NO logos with writing — "
+            "abstract graphics, stripes, and patterns only."
+        )
+    else:
+        parts.append(
+            "Include sponsor-style logos, racing numbers, and racing stripes."
+        )
+    if reference_analysis.strip():
+        parts.append(
+            f"Match these colors/style cues: {reference_analysis.strip()}"
+        )
+    parts.append("Bold, high-contrast, crisp vector-like racing graphics.")
+    return " ".join(parts)
+
+
+def _generate_pollinations(prompt: str, creativity: float = 0.7) -> Image.Image:
+    """Generate via Pollinations.ai — free, no API key required (Flux model)."""
+    import urllib.parse
+
+    url = (
+        "https://image.pollinations.ai/prompt/"
+        + urllib.parse.quote(prompt)
+        + "?width=1024&height=1024&nologo=true&model=flux"
+    )
+    return _download_image(url)
+
+
 def extract_car_number(prompt: str) -> Optional[str]:
     """Pull car number from the user prompt only — never from Customer ID."""
     match = re.search(r"\bnumber\s+(\d{1,3})\b", prompt, re.I)
@@ -810,6 +861,10 @@ def generate_livery(
 
     template_ref = template.ai_guide_image
 
+    pollinations_prompt = _build_flat_livery_prompt(
+        user_prompt, car, reference_analysis, constraints
+    )
+
     backends: list[tuple[str, callable]] = []
 
     if backend_preference == "xai" or backend_preference == "auto":
@@ -823,6 +878,10 @@ def generate_livery(
     if backend_preference == "stability" or backend_preference == "auto":
         if _is_configured_api_key(os.getenv("STABILITY_API_KEY", ""), prefix="sk-"):
             backends.append(("Stability AI SD3", lambda: _generate_stability(full_prompt, creativity)))
+    if backend_preference == "pollinations" or backend_preference == "auto":
+        backends.append(
+            ("Pollinations Flux (free)", lambda: _generate_pollinations(pollinations_prompt, creativity))
+        )
 
     errors: list[str] = []
     for name, fn in backends:

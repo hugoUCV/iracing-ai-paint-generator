@@ -22,7 +22,7 @@ Generate ready-to-use iRacing paint files (`car_<ID>.tga` and optional `car_spec
 
 - Windows 10/11 (primary target; Python stack is cross-platform)
 - Python 3.10+
-- An API key for at least one cloud backend (optional — demo mode works without keys)
+- An API key for at least one cloud backend (optional — Pollinations is free with no key, and demo mode needs no keys)
 
 ## Quick start
 
@@ -59,8 +59,9 @@ Set keys in `.env` (see `.env.example`):
 | `XAI_API_KEY` | xAI Grok Imagine + vision (recommended) |
 | `OPENAI_API_KEY` | OpenAI DALL-E 3 |
 | `STABILITY_API_KEY` | Stability AI SD3 |
+| *(none)* | Pollinations Flux — free, no key required |
 
-**Auto** mode tries backends in that order, then falls back to demo mode.
+**Auto** mode tries backends in that order, then Pollinations (free), then falls back to demo mode.
 
 ## First-run template cache
 
